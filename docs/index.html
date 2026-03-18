@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DevScribe - AI-powered terminal session logger. Git log for your whole dev life. Get plain-English summaries of what you built, broke, and learned.">
+    <meta name="keywords" content="terminal, session logger, AI, developer tools, command history, productivity">
+    <meta name="author" content="DevScribe">
+    <meta property="og:title" content="DevScribe - AI-Powered Terminal Session Logger">
+    <meta property="og:description" content="Git log for your whole dev life. Get plain-English summaries of what you built, broke, and learned.">
+    <meta property="og:type" content="website">
+    <title>DevScribe | AI-Powered Terminal Session Logger</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --neon: #f472b6;
+            --neon-hover: #ec4899;
+            --accent-purple: #a855f7;
+            --accent-cyan: #00d4ff;
+            --accent-amber: #ffb000;
+            --accent-red: #ff6b6b;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #52525b;
+            --border-color: #27272a;
+            --glow-neon: rgba(244, 114, 182, 0.15);
+            --glow-purple: rgba(168, 85, 247, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(to bottom, #0a0a0a, #000000);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Page-wide container for proper padding */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+            padding: 16px 0;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--neon);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .logo .prompt {
+            color: var(--accent-cyan);
+            animation: blink 1s step-end infinite;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+            padding: 8px 12px;
+            border-radius: 4px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon);
+            background: rgba(244, 114, 182, 0.1);
+        }
+
+        /* Hamburger Menu Button */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 28px;
+            height: 2px;
+            background: var(--text-primary);
+            margin: 4px 0;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 99;
+            padding: 80px 24px 24px;
+            flex-direction: column;
+            gap: 24px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .mobile-menu.active {
+            display: flex;
+        }
+
+        .mobile-menu a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-align: center;
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mobile-menu a:hover {
+            background: rgba(244, 114, 182, 0.1);
+            color: var(--neon);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: -20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, var(--glow-neon) 0%, transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 10%;
+            right: -10%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, var(--glow-purple) 0%, transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+        }
+
+        .hero-text h1 .highlight {
+            color: var(--neon);
+            text-shadow: 0 0 30px var(--glow-neon);
+        }
+
+        .hero-text .tagline {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .hero-text .tagline::before {
+            content: '# ';
+            color: var(--accent-cyan);
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 48px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-primary {
+            background: var(--neon);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px var(--glow-neon);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 20px var(--glow-purple);
+        }
+
+        /* Terminal Preview */
+        .terminal-preview {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-header {
+            background: var(--bg-tertiary);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27c93f; }
+
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .terminal-body {
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            min-height: 300px;
+            overflow-x: auto;
+        }
+
+        .terminal-line {
+            margin-bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .terminal-prompt {
+            color: var(--neon);
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .terminal-command {
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .terminal-output {
+            color: var(--text-secondary);
+            margin-left: 0;
+            padding-left: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .terminal-success {
+            color: var(--neon);
+        }
+
+        .terminal-error {
+            color: var(--accent-red);
+        }
+
+        .terminal-info {
+            color: var(--accent-cyan);
+        }
+
+        .terminal-cyan {
+            color: var(--accent-cyan);
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background: var(--neon);
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header h2::before {
+            content: '$ ';
+            color: var(--accent-cyan);
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--neon), var(--accent-cyan));
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--neon);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--neon);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        /* Commands Section */
+        .commands {
+            padding: 60px 0;
+            background: var(--bg-secondary);
+            position: relative;
+        }
+
+        .commands::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+        }
+
+        .commands-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        .command-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .command-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+
+        .command-item:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .command-item .cmd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .command-item .cmd::before {
+            content: '$ ';
+            color: var(--neon);
+        }
+
+        .command-item .desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 48px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 32px;
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--neon);
+            margin-bottom: 8px;
+        }
+
+        .stat-item p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 80px 0;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--neon);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--neon);
+        }
+
+        .step-content h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            margin-bottom: 8px;
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .step-content code {
+            background: var(--bg-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
+            display: inline-block;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 80px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, var(--glow-neon) 0%, transparent 50%);
+            filter: blur(80px);
+            pointer-events: none;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .cta p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 32px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        footer .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+            padding: 8px 12px;
+            border-radius: 4px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .footer-links a:hover {
+            color: var(--neon);
+            background: rgba(244, 114, 182, 0.1);
+        }
+
+        .copyright {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 40px;
+            }
+
+            .hero-text h1 {
+                font-size: 2.25rem;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .terminal-preview {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+
+            .commands-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu {
+                display: none;
+            }
+
+            .mobile-menu.active {
+                display: flex;
+            }
+
+            .hero-text h1 {
+                font-size: 1.75rem;
+            }
+
+            .section-header h2 {
+                font-size: 1.75rem;
+            }
+
+            footer .container {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .features {
+                padding: 60px 0;
+            }
+
+            .commands {
+                padding: 60px 0;
+            }
+
+            .stats {
+                padding: 40px 0;
+            }
+
+            .how-it-works {
+                padding: 60px 0;
+            }
+
+            .cta {
+                padding: 60px 0;
+            }
+
+            .terminal-window {
+                border-radius: 8px;
+            }
+
+            .terminal-body {
+                padding: 16px;
+                font-size: 0.75rem;
+            }
+
+            .hero {
+                padding-top: 80px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .hero-text h1 {
+                font-size: 1.5rem;
+            }
+
+            .hero-text .tagline {
+                font-size: 1rem;
+            }
+
+            .section-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .section-header p {
+                font-size: 0.9rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .feature-card {
+                padding: 24px;
+            }
+
+            .step {
+                gap: 16px;
+            }
+
+            .step-number {
+                width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+
+            .btn {
+                padding: 14px 24px;
+                font-size: 0.8rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes typewriter {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                box-shadow: 0 0 5px var(--neon), 0 0 10px var(--neon);
+            }
+            50% {
+                box-shadow: 0 0 20px var(--neon), 0 0 30px var(--neon);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .animate-slide-left {
+            animation: slideInLeft 0.6s ease-out forwards;
+        }
+
+        .animate-slide-right {
+            animation: slideInRight 0.6s ease-out forwards;
+        }
+
+        .animate-scale {
+            animation: scaleIn 0.5s ease-out forwards;
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-glow {
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        .delay-5 { animation-delay: 0.5s; }
+        .delay-6 { animation-delay: 0.6s; }
+
+        /* Initial states for scroll animations */
+        .feature-card, .command-item, .step, .stat-item, .section-header, .terminal-preview {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .feature-card.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .command-item.animate-slide-left {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .stat-item.animate-scale {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .section-header.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .terminal-preview.animate-slide-right {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .step.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Feature icon float on hover */
+        .feature-card:hover .feature-icon {
+            animation: float 1s ease-in-out;
+        }
+
+        /* Parallax sections */
+        .parallax-slow {
+            transform: translateY(calc(var(--scroll) * 0.3px));
+        }
+
+        .parallax-fast {
+            transform: translateY(calc(var(--scroll) * -0.2px));
+        }
+
+        /* Prevent text selection on touch devices for better tap experience */
+        @media (hover: none) and (pointer: coarse) {
+            .btn, .nav-links a, .mobile-menu a, .logo, footer a {
+                -webkit-touch-callout: none;
+                user-select: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <a href="#" class="logo"><span class="prompt">&gt;</span>devscribe</a>
+            <ul class="nav-links">
+                <li><a href="#features">features</a></li>
+                <li><a href="#commands">commands</a></li>
+                <li><a href="#how-it-works">install</a></li>
+                <li><a href="https://github.com/devscribe/devscribe" target="_blank">github</a></li>
+            </ul>
+            <button class="hamburger" aria-label="Toggle menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" aria-hidden="true">
+        <a href="#features" data-close-menu>features</a>
+        <a href="#commands" data-close-menu>commands</a>
+        <a href="#how-it-works" data-close-menu>install</a>
+        <a href="https://github.com/devscribe/devscribe" target="_blank">github</a>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>
+                        <span class="highlight">git log</span> for your<br>
+                        whole dev life
+                    </h1>
+                    <p class="tagline">AI-powered terminal session logger</p>
+                    <div class="hero-buttons">
+                        <a href="https://github.com/devscribe/devscribe" class="btn btn-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            View on GitHub
+                        </a>
+                        <a href="#how-it-works" class="btn btn-secondary">
+                            Quick Install
+                        </a>
+                    </div>
+                </div>
+                <div class="terminal-preview">
+                    <div class="terminal-header">
+                        <span class="terminal-dot red"></span>
+                        <span class="terminal-dot yellow"></span>
+                        <span class="terminal-dot green"></span>
+                        <span class="terminal-title">devscribe - ~/my-project</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-command">devscribe start</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output terminal-success">✓ Session started [my-project]</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-command">npm run build</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output terminal-info">Build completed in 2.3s</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-command">git commit -m "feat: add new feature"</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output terminal-success">✓ Committed: a1b2c3d</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-command">devscribe recap</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">┌─ Session Summary ─────────────────┐</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ • Built production bundle         │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ • Committed new feature code      │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ • Fixed 3 TypeScript warnings     │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ • Ran test suite (47 passed)      │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">└───────────────────────────────────┘</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="typing-cursor"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>features</h2>
+                <p>Capture every command, get AI-powered insights, never forget what you built</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🪝</span>
+                    <h3>shell_hook</h3>
+                    <p>Captures every command with exit codes, timestamps, and working directory automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📁</span>
+                    <h3>project_detection</h3>
+                    <p>Auto-tags sessions with git repo names. Know exactly what you worked on and when.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🤖</span>
+                    <h3>ai_summaries</h3>
+                    <p>Get 5-bullet session recaps powered by LiteLLM. Plain-English summaries of your work.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔍</span>
+                    <h3>fuzzy_search</h3>
+                    <p>Search through your entire command history. Find that one command you ran weeks ago.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <h3>export_reports</h3>
+                    <p>Generate markdown reports of your work. Perfect for standups and documentation.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📈</span>
+                    <h3>productivity_stats</h3>
+                    <p>Track your productivity with detailed stats. See your most used commands and peak hours.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Commands Section -->
+    <section id="commands" class="commands">
+        <div class="container">
+            <div class="section-header">
+                <h2>commands</h2>
+                <p>Simple CLI to manage your development sessions</p>
+            </div>
+            <div class="commands-content">
+                <div class="command-list">
+                    <div class="command-item">
+                        <div class="cmd">devscribe start [project]</div>
+                        <div class="desc">Start a new development session (auto-detects project from git repo)</div>
+                    </div>
+                    <div class="command-item">
+                        <div class="cmd">devscribe recap</div>
+                        <div class="desc">Get an AI-powered summary of your current/last session</div>
+                    </div>
+                    <div class="command-item">
+                        <div class="cmd">devscribe search "docker"</div>
+                        <div class="desc">Search through your entire command history</div>
+                    </div>
+                    <div class="command-item">
+                        <div class="cmd">devscribe stats --days 7</div>
+                        <div class="desc">View productivity statistics and insights</div>
+                    </div>
+                    <div class="command-item">
+                        <div class="cmd">devscribe export --today -o daily.md</div>
+                        <div class="desc">Export your work to markdown for standups</div>
+                    </div>
+                    <div class="command-item">
+                        <div class="cmd">devscribe daily</div>
+                        <div class="desc">Generate a quick daily standup report</div>
+                    </div>
+                </div>
+                <div class="terminal-preview">
+                    <div class="terminal-header">
+                        <span class="terminal-dot red"></span>
+                        <span class="terminal-dot yellow"></span>
+                        <span class="terminal-dot green"></span>
+                        <span class="terminal-title">devscribe stats</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="terminal-output terminal-info">┌─ Productivity Stats ──────────────┐</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ Last 7 days                       │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">├───────────────────────────────────┤</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ Sessions: <span class="terminal-success">24</span>                      │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ Total Commands: <span class="terminal-success">1,847</span>              │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ Avg Commands/Day: <span class="terminal-success">264</span>             │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ Success Rate: <span class="terminal-success">94.2%</span>               │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ Total Time: <span class="terminal-success">32h 15m</span>               │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">├───────────────────────────────────┤</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│ Top Commands:                     │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│  git commit     <span class="terminal-cyan">312</span>  (16.9%)      │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│  npm run        <span class="terminal-cyan">248</span>  (13.4%)      │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">│  pytest         <span class="terminal-cyan">187</span>  (10.1%)      │</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">└───────────────────────────────────┘</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>100%</h3>
+                    <p>Local First</p>
+                </div>
+                <div class="stat-item">
+                    <h3>12+</h3>
+                    <p>AI Models</p>
+                </div>
+                <div class="stat-item">
+                    <h3>0</h3>
+                    <p>Telemetry</p>
+                </div>
+                <div class="stat-item">
+                    <h3>MIT</h3>
+                    <p>License</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <h2>install</h2>
+                <p>Get started in under 60 seconds</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Clone the repository</h3>
+                        <p><code>git clone https://github.com/devscribe/devscribe.git && cd devscribe</code></p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Run the installer</h3>
+                        <p><code>./install.sh</code> — This sets up the virtual environment and shell hook.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Reload your shell</h3>
+                        <p><code>source ~/.bashrc</code> or <code>source ~/.zshrc</code></p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Start logging</h3>
+                        <p><code>devscribe start</code> — Begin your first session!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to remember everything?</h2>
+                <p>Stop forgetting what you built yesterday. Start logging your dev life today.</p>
+                <div class="hero-buttons" style="justify-content: center;">
+                    <a href="https://github.com/devscribe/devscribe" class="btn btn-primary">
+                        Get Started
+                    </a>
+                    <a href="https://github.com/devscribe/devscribe#readme" class="btn btn-secondary">
+                        Read the Docs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://github.com/devscribe/devscribe">GitHub</a>
+                <a href="https://github.com/devscribe/devscribe/issues">Issues</a>
+                <a href="https://github.com/devscribe/devscribe/blob/main/LICENSE">License</a>
+            </div>
+            <div class="copyright">
+                Made with ❤️ for developers who forget what they did yesterday
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const hamburger = document.querySelector('.hamburger');
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const closeMenuLinks = document.querySelectorAll('[data-close-menu]');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
+            const isExpanded = hamburger.classList.contains('active');
+            hamburger.setAttribute('aria-expanded', isExpanded);
+            mobileMenu.setAttribute('aria-hidden', !isExpanded);
+            document.body.style.overflow = isExpanded ? 'hidden' : '';
+        });
+
+        closeMenuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                mobileMenu.classList.remove('active');
+                hamburger.setAttribute('aria-expanded', 'false');
+                mobileMenu.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+                hamburger.classList.remove('active');
+                mobileMenu.classList.remove('active');
+                hamburger.setAttribute('aria-expanded', 'false');
+                mobileMenu.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                e.preventDefault();
+                const target = document.querySelector(targetId);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -80px 0px'
+        };
+
+        // Create multiple observers for different animation types
+        const fadeInObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    // Add staggered delay based on index
+                    const delay = entry.target.dataset.delay || 0;
+                    setTimeout(() => {
+                        entry.target.classList.add('animate-in');
+                    }, delay);
+                    fadeInObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const slideLeftObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const delay = entry.target.dataset.delay || 0;
+                    entry.target.style.transform = 'translateX(-50px)';
+                    setTimeout(() => {
+                        entry.target.classList.add('animate-slide-left');
+                    }, delay);
+                    slideLeftObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const slideRightObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.style.transform = 'translateX(50px)';
+                    setTimeout(() => {
+                        entry.target.classList.add('animate-slide-right');
+                    }, 100);
+                    slideRightObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const scaleObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const delay = entry.target.dataset.delay || 0;
+                    entry.target.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        entry.target.classList.add('animate-scale');
+                        // Trigger counter animation for stat numbers
+                        const number = entry.target.querySelector('h3');
+                        if (number && !number.dataset.animated) {
+                            animateCounter(number);
+                            number.dataset.animated = 'true';
+                        }
+                    }, delay);
+                    scaleObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Apply animations to elements
+        document.querySelectorAll('.feature-card').forEach((el, i) => {
+            el.dataset.delay = i * 100;
+            fadeInObserver.observe(el);
+        });
+
+        document.querySelectorAll('.command-item').forEach((el, i) => {
+            el.dataset.delay = i * 80;
+            el.style.transform = 'translateX(-50px)';
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+            slideLeftObserver.observe(el);
+        });
+
+        document.querySelectorAll('.stat-item').forEach((el, i) => {
+            el.dataset.delay = i * 150;
+            el.style.transform = 'scale(0.8)';
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+            scaleObserver.observe(el);
+        });
+
+        document.querySelectorAll('.step').forEach((el, i) => {
+            el.dataset.delay = i * 120;
+            fadeInObserver.observe(el);
+        });
+
+        document.querySelectorAll('.section-header').forEach((el) => {
+            fadeInObserver.observe(el);
+        });
+
+        document.querySelectorAll('.terminal-preview').forEach((el) => {
+            el.style.transform = 'translateX(50px)';
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            slideRightObserver.observe(el);
+        });
+
+        // Counter animation for stat numbers
+        function animateCounter(element) {
+            const text = element.textContent;
+            const match = text.match(/^(\d+)(.*)$/);
+            if (!match) return;
+            
+            const target = parseInt(match[1]);
+            const suffix = match[2];
+            const duration = 1500;
+            const start = 0;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function (ease-out cubic)
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(start + (target - start) * easeOut);
+                
+                element.textContent = current + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    element.textContent = text; // Restore original text
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        // Parallax scroll effect
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrollY = window.scrollY;
+                    document.documentElement.style.setProperty('--scroll', scrollY);
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Navbar background on scroll
+        const nav = document.querySelector('nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(10, 10, 10, 0.98)';
+                nav.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
+            } else {
+                nav.style.background = 'rgba(10, 10, 10, 0.95)';
+                nav.style.boxShadow = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
