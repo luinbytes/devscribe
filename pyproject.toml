@@ -7,7 +7,7 @@ name = "devscribe"
 version = "0.1.0"
 description = "AI-powered terminal session logger - git log for your whole dev life"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.12"
 authors = [
     {name = "DevScribe", email = "hello@devscribe.dev"}
@@ -41,9 +41,9 @@ dev = [
 devscribe = "devscribe.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/devscribe/devscribe"
-Documentation = "https://github.com/devscribe/devscribe#readme"
-Repository = "https://github.com/devscribe/devscribe"
+Homepage = "https://github.com/luinbytes/devscribe"
+Documentation = "https://luinbytes.github.io/devscribe/"
+Repository = "https://github.com/luinbytes/devscribe"
 
 [tool.setuptools.packages.find]
 where = ["."]
