@@ -4,7 +4,7 @@ import os
 from typing import List, Optional
 from datetime import datetime
 
-from shellscribe.db import Command, Session, Config
+from devscribe.db import Command, Session, Config
 
 # Try to import litellm, handle gracefully if not available
 try:

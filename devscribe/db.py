@@ -16,7 +16,7 @@ from peewee import (
     BooleanField,
 )
 
-from shellscribe import DB_PATH, CONFIG_PATH
+from devscribe import DB_PATH, CONFIG_PATH
 
 # Initialize database
 db = SqliteDatabase(str(DB_PATH))

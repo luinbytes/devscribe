@@ -1,10 +1,10 @@
-"""Tests for shell hook functionality in shellscribe.hook module."""
+"""Tests for shell hook functionality in devscribe.hook module."""
 
 import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from shellscribe.hook import (
+from devscribe.hook import (
     HOOK_SCRIPT,
     BASH_HOOK,
     ZSH_HOOK,
@@ -24,7 +24,7 @@ class TestGetHookForShell:
 
         assert result == BASH_HOOK.strip()
         assert "PROMPT_COMMAND" in result
-        assert "shellscribe log" in result
+        assert "devscribe log" in result
 
     def test_get_hook_for_shell_zsh(self):
         """Test that get_hook_for_shell returns zsh hook for 'zsh'."""
@@ -64,14 +64,14 @@ class TestBashHook:
 
     def test_bash_hook_contains_required_elements(self):
         """Test that bash hook contains all required elements."""
-        assert "# ShellScribe hook" in BASH_HOOK
-        assert "SHELLSCRIBE_HOOK_INSTALLED" in BASH_HOOK
+        assert "# DevScribe hook" in BASH_HOOK
+        assert "DEVSCRIBE_HOOK_INSTALLED" in BASH_HOOK
         assert "PROMPT_COMMAND" in BASH_HOOK
-        assert "shellscribe log" in BASH_HOOK
+        assert "devscribe log" in BASH_HOOK
 
     def test_bash_hook_prevents_double_install(self):
         """Test that bash hook has guard against double installation."""
-        assert 'SHELLSCRIBE_HOOK_INSTALLED' in BASH_HOOK
+        assert 'DEVSCRIBE_HOOK_INSTALLED' in BASH_HOOK
 
     def test_bash_hook_captures_exit_code(self):
         """Test that bash hook captures exit code."""
@@ -91,9 +91,9 @@ class TestZshHook:
 
     def test_zsh_hook_contains_required_elements(self):
         """Test that zsh hook contains all required elements."""
-        assert "# ShellScribe hook" in ZSH_HOOK
-        assert "SHELLSCRIBE_HOOK_INSTALLED" in ZSH_HOOK
-        assert "_shellscribe_precmd" in ZSH_HOOK
+        assert "# DevScribe hook" in ZSH_HOOK
+        assert "DEVSCRIBE_HOOK_INSTALLED" in ZSH_HOOK
+        assert "_devscribe_precmd" in ZSH_HOOK
         assert "add-zsh-hook" in ZSH_HOOK
 
     def test_zsh_hook_uses_precmd(self):
@@ -110,7 +110,7 @@ class TestZshHook:
 
     def test_zsh_hook_prevents_double_install(self):
         """Test that zsh hook has guard against double installation."""
-        assert 'SHELLSCRIBE_HOOK_INSTALLED' in ZSH_HOOK
+        assert 'DEVSCRIBE_HOOK_INSTALLED' in ZSH_HOOK
 
 
 class TestHookScript:
@@ -128,12 +128,12 @@ class TestHookScript:
 
     def test_hook_script_has_log_function(self):
         """Test that HOOK_SCRIPT defines the log function."""
-        assert "_shellscribe_log_command()" in HOOK_SCRIPT
+        assert "_devscribe_log_command()" in HOOK_SCRIPT
 
-    def test_hook_script_skips_shellscribe_commands(self):
-        """Test that HOOK_SCRIPT skips logging shellscribe's own commands."""
-        assert "! \"command\" =~ ^shellscribe" in HOOK_SCRIPT or \
-               '! "$command" =~ ^shellscribe' in HOOK_SCRIPT
+    def test_hook_script_skips_devscribe_commands(self):
+        """Test that HOOK_SCRIPT skips logging devscribe's own commands."""
+        assert "! \"command\" =~ ^devscribe" in HOOK_SCRIPT or \
+               '! "$command" =~ ^devscribe' in HOOK_SCRIPT
 
 
 class TestInstallHook:
@@ -150,7 +150,7 @@ class TestInstallHook:
     def test_install_hook_already_installed(self, tmp_path):
         """Test install_hook detects existing installation."""
         mock_bashrc = tmp_path / ".bashrc"
-        mock_bashrc.write_text("# ShellScribe - AI-powered terminal session logger\n")
+        mock_bashrc.write_text("# DevScribe - AI-powered terminal session logger\n")
 
         with patch.dict('os.environ', {'SHELL': '/bin/bash'}):
             with patch('pathlib.Path.home', return_value=tmp_path):
@@ -183,7 +183,7 @@ class TestInstallHook:
 
                 # Verify content was added
                 content = mock_bashrc.read_text()
-                assert "ShellScribe" in content
+                assert "DevScribe" in content
 
     def test_install_hook_zsh(self, tmp_path):
         """Test install_hook for zsh shell."""
@@ -215,16 +215,16 @@ class TestUninstallHook:
                 success, message = uninstall_hook()
 
                 assert success is False
-                assert "No ShellScribe hook found" in message
+                assert "No DevScribe hook found" in message
 
     def test_uninstall_hook_removes_hook(self, tmp_path):
         """Test uninstall_hook removes the hook from config file."""
         mock_bashrc = tmp_path / ".bashrc"
         mock_bashrc.write_text("""
 # Regular content
-# ShellScribe hook
-if [[ -z "$SHELLSCRIBE_HOOK_INSTALLED" ]]; then
-    export PROMPT_COMMAND='shellscribe log "$(history 1)" "$?" "$PWD"'
+# DevScribe hook
+if [[ -z "$DEVSCRIBE_HOOK_INSTALLED" ]]; then
+    export PROMPT_COMMAND='devscribe log "$(history 1)" "$?" "$PWD"'
 fi
 # More content
 """)
@@ -238,7 +238,7 @@ fi
 
                 # Verify hook was removed
                 content = mock_bashrc.read_text()
-                assert "ShellScribe hook" not in content
+                assert "DevScribe hook" not in content
 
 
 class TestCheckHookStatus:
@@ -259,7 +259,7 @@ class TestCheckHookStatus:
     def test_check_hook_status_installed_bash(self, tmp_path):
         """Test check_hook_status detects bash hook installation."""
         mock_bashrc = tmp_path / ".bashrc"
-        mock_bashrc.write_text("# ShellScribe hook\nshellscribe log\n")
+        mock_bashrc.write_text("# DevScribe hook\ndevscribe log\n")
 
         with patch.dict('os.environ', {'SHELL': '/bin/bash'}):
             with patch('pathlib.Path.home', return_value=tmp_path):
@@ -272,7 +272,7 @@ class TestCheckHookStatus:
     def test_check_hook_status_installed_zsh(self, tmp_path):
         """Test check_hook_status detects zsh hook installation."""
         mock_zshrc = tmp_path / ".zshrc"
-        mock_zshrc.write_text("# ShellScribe hook\nshellscribe log\n")
+        mock_zshrc.write_text("# DevScribe hook\ndevscribe log\n")
 
         with patch.dict('os.environ', {'SHELL': '/bin/zsh'}):
             with patch('pathlib.Path.home', return_value=tmp_path):

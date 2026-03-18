@@ -1,1 +1,1 @@
-# ShellScribe test suite
+# DevScribe test suite

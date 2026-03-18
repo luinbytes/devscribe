@@ -1,4 +1,4 @@
-"""Pytest fixtures for ShellScribe tests."""
+"""Pytest fixtures for DevScribe tests."""
 
 import pytest
 import tempfile
@@ -7,7 +7,7 @@ from pathlib import Path
 from peewee import SqliteDatabase
 from unittest.mock import patch
 
-from shellscribe.db import Session, Command, BaseModel, db
+from devscribe.db import Session, Command, BaseModel, db
 
 
 @pytest.fixture

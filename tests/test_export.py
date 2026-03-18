@@ -1,11 +1,11 @@
-"""Tests for export functionality in shellscribe.export module."""
+"""Tests for export functionality in devscribe.export module."""
 
 import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from shellscribe.export import (
+from devscribe.export import (
     export_to_markdown,
     export_session_markdown,
     export_day_summary,
@@ -14,7 +14,7 @@ from shellscribe.export import (
     format_command_snippet,
     export_commands_as_script,
 )
-from shellscribe.db import Session, Command
+from devscribe.db import Session, Command
 
 
 class TestExportToMarkdown:
@@ -24,7 +24,7 @@ class TestExportToMarkdown:
         """Test exporting when no sessions exist returns appropriate message."""
         result = export_to_markdown([])
 
-        assert "# ShellScribe Development Log" in result
+        assert "# DevScribe Development Log" in result
         assert "*No sessions to export.*" in result
 
     def test_export_to_markdown_with_sessions(self, temp_db, sample_session, sample_commands):
@@ -35,7 +35,7 @@ class TestExportToMarkdown:
 
         result = export_to_markdown([sample_session])
 
-        assert "# ShellScribe Development Log" in result
+        assert "# DevScribe Development Log" in result
         assert "## Overview" in result
         assert "**Sessions:** 1" in result
         assert "**Commands:** 4" in result
@@ -64,7 +64,7 @@ class TestExportToMarkdown:
 
         assert output_file.exists()
         content = output_file.read_text()
-        assert "# ShellScribe Development Log" in content
+        assert "# DevScribe Development Log" in content
 
     def test_export_to_markdown_includes_projects_list(self, temp_db):
         """Test that export includes list of unique projects."""
@@ -249,7 +249,7 @@ class TestExportCommandsAsScript:
         result = export_commands_as_script(sample_commands)
 
         assert "#!/bin/bash" in result
-        assert "# ShellScribe Export - Successful Commands" in result
+        assert "# DevScribe Export - Successful Commands" in result
         assert "# Generated:" in result
 
     def test_export_commands_as_script_only_successful(self, temp_db, sample_session, sample_commands):
@@ -317,7 +317,7 @@ class TestExportDaySummary:
 
         result = export_day_summary()
 
-        assert "# ShellScribe Development Log" in result
+        assert "# DevScribe Development Log" in result
 
 
 class TestExportRecent:
@@ -329,7 +329,7 @@ class TestExportRecent:
 
         result = export_recent()
 
-        assert "# ShellScribe Development Log" in result
+        assert "# DevScribe Development Log" in result
 
     def test_export_recent_custom_days(self, temp_db):
         """Test exporting recent sessions with custom days parameter."""
@@ -337,7 +337,7 @@ class TestExportRecent:
 
         result = export_recent(days=3)
 
-        assert "# ShellScribe Development Log" in result
+        assert "# DevScribe Development Log" in result
 
 
 class TestExportProject:
@@ -351,7 +351,7 @@ class TestExportProject:
 
         result = export_project("target-project")
 
-        assert "# ShellScribe Development Log" in result
+        assert "# DevScribe Development Log" in result
         assert "**target-project**" in result
         # The other project should not appear in the session details
         # (though it won't appear anyway since it's filtered)

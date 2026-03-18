@@ -1,6 +1,6 @@
 #!/bin/bash
-# ShellScribe Installation Script
-# Installs ShellScribe and sets up shell integration
+# DevScribe Installation Script
+# Installs DevScribe and sets up shell integration
 
 set -e
 
@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════════════════════════╗"
-echo "║           ShellScribe - AI Session Logger                 ║"
+echo "║           DevScribe - AI Session Logger                 ║"
 echo "║                  Installation Script                      ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -62,15 +62,15 @@ else
 fi
 
 # Verify installation
-if ! command -v shellscribe &> /dev/null; then
-    echo -e "${YELLOW}Adding shellscribe to PATH...${NC}"
+if ! command -v devscribe &> /dev/null; then
+    echo -e "${YELLOW}Adding devscribe to PATH...${NC}"
     # Add to PATH for current session
     export PATH="$SCRIPT_DIR/.venv/bin:$PATH"
 fi
 
 # Install shell hook
 echo -e "${YELLOW}Installing shell hook...${NC}"
-shellscribe install
+devscribe install
 
 # Detect shell and provide instructions
 SHELL_NAME=$(basename "$SHELL")
@@ -99,21 +99,21 @@ echo -e "Or restart your terminal."
 echo ""
 echo -e "Then start a session:"
 echo ""
-echo -e "  ${BLUE}shellscribe start${NC}"
+echo -e "  ${BLUE}devscribe start${NC}"
 echo ""
 echo -e "For AI summaries, set your API key:"
 echo ""
 echo -e "  ${BLUE}export ZHIPUAI_API_KEY=your_key_here${NC}"
 echo ""
 echo -e "Available commands:"
-echo -e "  ${YELLOW}shellscribe start${NC}     - Start a new session"
-echo -e "  ${YELLOW}shellscribe stop${NC}      - End current session"
-echo -e "  ${YELLOW}shellscribe status${NC}    - Show session status"
-echo -e "  ${YELLOW}shellscribe recap${NC}     - AI summary of your work"
-echo -e "  ${YELLOW}shellscribe search${NC}    - Search command history"
-echo -e "  ${YELLOW}shellscribe list${NC}      - List sessions"
-echo -e "  ${YELLOW}shellscribe export${NC}    - Export to markdown"
-echo -e "  ${YELLOW}shellscribe --help${NC}    - Show all commands"
+echo -e "  ${YELLOW}devscribe start${NC}     - Start a new session"
+echo -e "  ${YELLOW}devscribe stop${NC}      - End current session"
+echo -e "  ${YELLOW}devscribe status${NC}    - Show session status"
+echo -e "  ${YELLOW}devscribe recap${NC}     - AI summary of your work"
+echo -e "  ${YELLOW}devscribe search${NC}    - Search command history"
+echo -e "  ${YELLOW}devscribe list${NC}      - List sessions"
+echo -e "  ${YELLOW}devscribe export${NC}    - Export to markdown"
+echo -e "  ${YELLOW}devscribe --help${NC}    - Show all commands"
 echo ""
 
 # Ask about AI configuration
@@ -125,7 +125,7 @@ if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     if [ -n "$api_key" ]; then
         # Add to shell config
         echo "" >> "$CONFIG_FILE"
-        echo "# ShellScribe AI Configuration" >> "$CONFIG_FILE"
+        echo "# DevScribe AI Configuration" >> "$CONFIG_FILE"
         echo "export ZHIPUAI_API_KEY=\"$api_key\"" >> "$CONFIG_FILE"
         export ZHIPUAI_API_KEY="$api_key"
         echo -e "${GREEN}API key saved to $CONFIG_FILE${NC}"

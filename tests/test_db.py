@@ -1,10 +1,10 @@
-"""Tests for database operations in shellscribe.db module."""
+"""Tests for database operations in devscribe.db module."""
 
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from shellscribe.db import (
+from devscribe.db import (
     Session,
     Command,
     Config,

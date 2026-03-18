@@ -1,8 +1,8 @@
-# ShellScribe 📝
+# DevScribe 📝
 
 > AI-powered terminal session logger — *git log for your whole dev life*
 
-ShellScribe silently watches your terminal sessions and builds a searchable, AI-summarized log. Get plain-English summaries of what you built, broke, and learned.
+DevScribe silently watches your terminal sessions and builds a searchable, AI-summarized log. Get plain-English summaries of what you built, broke, and learned.
 
 ## Features
 
@@ -17,23 +17,23 @@ ShellScribe silently watches your terminal sessions and builds a searchable, AI-
 
 ```bash
 # Clone and install
-git clone https://github.com/shellscribe/shellscribe.git
-cd shellscribe
+git clone https://github.com/devscribe/devscribe.git
+cd devscribe
 ./install.sh
 
 # Start a session
-shellscribe start
+devscribe start
 
 # Work normally... your commands are being logged
 
 # Get an AI summary
-shellscribe recap
+devscribe recap
 
 # Search your history
-shellscribe search "docker"
+devscribe search "docker"
 
 # Export your work
-shellscribe export --last 7d -o weekly.md
+devscribe export --last 7d -o weekly.md
 ```
 
 ## Installation
@@ -46,8 +46,8 @@ shellscribe export --last 7d -o weekly.md
 
 ```bash
 # Clone the repository
-git clone https://github.com/shellscribe/shellscribe.git
-cd shellscribe
+git clone https://github.com/devscribe/devscribe.git
+cd devscribe
 
 # Run the installer
 ./install.sh
@@ -67,7 +67,7 @@ source .venv/bin/activate
 pip install -e .
 
 # Install shell hook
-shellscribe install
+devscribe install
 ```
 
 ## Commands
@@ -76,116 +76,116 @@ shellscribe install
 
 ```bash
 # Start a new session (auto-detects project from git repo)
-shellscribe start
+devscribe start
 
 # Start with explicit project name
-shellscribe start my-project
+devscribe start my-project
 
 # End current session
-shellscribe stop
+devscribe stop
 
 # Show session status
-shellscribe status
+devscribe status
 ```
 
 ### AI Features
 
 ```bash
 # Get AI summary of current/last session
-shellscribe recap
+devscribe recap
 
 # Get summary of all today's sessions
-shellscribe recap --today
+devscribe recap --today
 
 # Explain a failed command
-shellscribe recap --explain <command-id>
+devscribe recap --explain <command-id>
 ```
 
 ### Search & List
 
 ```bash
 # List recent sessions
-shellscribe list
+devscribe list
 
 # List today's sessions
-shellscribe list --today
+devscribe list --today
 
 # List sessions from last 3 days
-shellscribe list --last 3
+devscribe list --last 3
 
 # Filter by project
-shellscribe list --project my-app
+devscribe list --project my-app
 
 # Search commands
-shellscribe search "npm install"
+devscribe search "npm install"
 
 # Interactive search with fzf
-shellscribe search "error" --interactive
+devscribe search "error" --interactive
 
 # List recent commands
-shellscribe list-commands
+devscribe list-commands
 
 # Show only failed commands
-shellscribe list-commands --failed
+devscribe list-commands --failed
 ```
 
 ### Export
 
 ```bash
 # Export last 7 days (default)
-shellscribe export
+devscribe export
 
 # Export last 30 days
-shellscribe export --last 30
+devscribe export --last 30
 
 # Export today only
-shellscribe export --today
+devscribe export --today
 
 # Export specific project
-shellscribe export --project my-app
+devscribe export --project my-app
 
 # Export as shell script (successful commands only)
-shellscribe export --script -o setup.sh
+devscribe export --script -o setup.sh
 ```
 
 ### Configuration
 
 ```bash
 # View all config
-shellscribe config --list
+devscribe config --list
 
 # Set AI model
-shellscribe config ai_model zai/glm-4
+devscribe config ai_model zai/glm-4
 
 # Disable AI
-shellscribe config ai_enabled false
+devscribe config ai_enabled false
 ```
 
 ### Utilities
 
 ```bash
 # List all projects
-shellscribe projects
+devscribe projects
 
 # Clean up old sessions
-shellscribe cleanup --days 30
+devscribe cleanup --days 30
 
 # Install shell hook
-shellscribe install
+devscribe install
 
 # Uninstall shell hook
-shellscribe uninstall
+devscribe uninstall
 ```
 
 ## AI Configuration
 
-ShellScribe uses [LiteLLM](https://github.com/BerriAI/litellm) for model-agnostic AI calls.
+DevScribe uses [LiteLLM](https://github.com/BerriAI/litellm) for model-agnostic AI calls.
 
 ### Supported Models
 
 Set your preferred model with:
 ```bash
-shellscribe config ai_model <model_name>
+devscribe config ai_model <model_name>
 ```
 
 Common options:
@@ -213,7 +213,7 @@ Add to your `~/.bashrc` or `~/.zshrc` to persist.
 
 ## Database
 
-ShellScribe stores data in SQLite at `~/.shellscribe/shellscribe.db`.
+DevScribe stores data in SQLite at `~/.devscribe/devscribe.db`.
 
 ### Schema
 
@@ -240,7 +240,7 @@ CREATE TABLE commands (
 
 ## Configuration File
 
-Location: `~/.shellscribe/config.json`
+Location: `~/.devscribe/config.json`
 
 Default settings:
 ```json
@@ -255,7 +255,7 @@ Default settings:
 
 ## Shell Integration
 
-ShellScribe uses `PROMPT_COMMAND` (bash) or `precmd` hooks (zsh) to capture commands.
+DevScribe uses `PROMPT_COMMAND` (bash) or `precmd` hooks (zsh) to capture commands.
 
 ### How It Works
 
@@ -265,7 +265,7 @@ ShellScribe uses `PROMPT_COMMAND` (bash) or `precmd` hooks (zsh) to capture comm
    - Working directory
    - Timestamp
 
-2. This data is sent to `shellscribe log` in the background
+2. This data is sent to `devscribe log` in the background
 
 3. Commands are associated with the active session
 
@@ -274,19 +274,19 @@ ShellScribe uses `PROMPT_COMMAND` (bash) or `precmd` hooks (zsh) to capture comm
 If the automatic installation doesn't work, add this to your `~/.bashrc`:
 
 ```bash
-# ShellScribe hook
-export PROMPT_COMMAND='shellscribe log "$(history 1 | sed "s/^[ ]*[0-9]*[ ]*//")" "$?" "$PWD" 2>/dev/null; '"$PROMPT_COMMAND"
+# DevScribe hook
+export PROMPT_COMMAND='devscribe log "$(history 1 | sed "s/^[ ]*[0-9]*[ ]*//")" "$?" "$PWD" 2>/dev/null; '"$PROMPT_COMMAND"
 ```
 
 For zsh (`~/.zshrc`):
 
 ```bash
-# ShellScribe hook
-_shellscribe_precmd() {
-    shellscribe log "$(history -1 | sed 's/^[ ]*[0-9]*[ ]*//')" "$?" "$PWD" 2>/dev/null
+# DevScribe hook
+_devscribe_precmd() {
+    devscribe log "$(history -1 | sed 's/^[ ]*[0-9]*[ ]*//')" "$?" "$PWD" 2>/dev/null
 }
 autoload -Uz add-zsh-hook
-add-zsh-hook precmd _shellscribe_precmd
+add-zsh-hook precmd _devscribe_precmd
 ```
 
 ## Examples
@@ -295,7 +295,7 @@ add-zsh-hook precmd _shellscribe_precmd
 
 ```bash
 # Morning: start a session
-shellscribe start
+devscribe start
 
 # Work on your project...
 npm install
@@ -304,34 +304,34 @@ git checkout -b feature/new-ui
 # ... commands are being logged ...
 
 # End of day: get a summary
-shellscribe stop
-shellscribe recap
+devscribe stop
+devscribe recap
 
 # Export your work
-shellscribe export --today -o daily-standup.md
+devscribe export --today -o daily-standup.md
 ```
 
 ### Weekly Review
 
 ```bash
 # Export the week's work
-shellscribe export --last 7 -o weekly-report.md
+devscribe export --last 7 -o weekly-report.md
 
 # List all projects you worked on
-shellscribe projects
+devscribe projects
 ```
 
 ### Debugging Session
 
 ```bash
 # Search for error-related commands
-shellscribe search "error" --interactive
+devscribe search "error" --interactive
 
 # List failed commands
-shellscribe list-commands --failed
+devscribe list-commands --failed
 
 # Get AI explanation of a failure
-shellscribe recap --explain 123
+devscribe recap --explain 123
 ```
 
 ## Development
@@ -340,8 +340,8 @@ shellscribe recap --explain 123
 
 ```bash
 # Clone and setup dev environment
-git clone https://github.com/shellscribe/shellscribe.git
-cd shellscribe
+git clone https://github.com/devscribe/devscribe.git
+cd devscribe
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
@@ -350,7 +350,7 @@ pip install -e ".[dev]"
 ### Project Structure
 
 ```
-shellscribe/
+devscribe/
 ├── __init__.py    # Package init, paths
 ├── cli.py         # Typer CLI commands
 ├── db.py          # Peewee models, DB ops
@@ -367,14 +367,14 @@ pytest tests/
 
 ## Graceful Degradation
 
-ShellScribe works without AI:
+DevScribe works without AI:
 - All core logging features work without API keys
 - AI commands (`recap`, `explain`) will show a helpful message
 - Search, list, and export work normally
 
 ## Privacy
 
-- All data is stored locally in `~/.shellscribe/`
+- All data is stored locally in `~/.devscribe/`
 - No telemetry or external calls (except AI if configured)
 - You control what gets exported
 
@@ -384,7 +384,7 @@ ShellScribe works without AI:
 
 1. Check if hook is installed:
    ```bash
-   shellscribe install
+   devscribe install
    ```
 
 2. Reload your shell:
@@ -394,7 +394,7 @@ ShellScribe works without AI:
 
 3. Check for active session:
    ```bash
-   shellscribe status
+   devscribe status
    ```
 
 ### AI not working
@@ -406,14 +406,14 @@ ShellScribe works without AI:
 
 2. Verify AI is enabled:
    ```bash
-   shellscribe config ai_enabled
+   devscribe config ai_enabled
    ```
 
 ### Database issues
 
-The database is at `~/.shellscribe/shellscribe.db`. You can:
-- Back it up: `cp ~/.shellscribe/shellscribe.db ~/backup/`
-- Delete it to start fresh: `rm ~/.shellscribe/shellscribe.db`
+The database is at `~/.devscribe/devscribe.db`. You can:
+- Back it up: `cp ~/.devscribe/devscribe.db ~/backup/`
+- Delete it to start fresh: `rm ~/.devscribe/devscribe.db`
 
 ## License
 

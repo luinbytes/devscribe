@@ -1,4 +1,4 @@
-"""CLI interface for ShellScribe using Typer."""
+"""CLI interface for DevScribe using Typer."""
 
 import os
 import sys
@@ -13,8 +13,8 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Prompt, Confirm
 
-from shellscribe import __version__
-from shellscribe.db import (
+from devscribe import __version__
+from devscribe.db import (
     Session,
     Command,
     Config,
@@ -26,20 +26,20 @@ from shellscribe.db import (
     search_commands,
     detect_project,
 )
-from shellscribe.ai import (
+from devscribe.ai import (
     generate_summary,
     is_ai_available,
     AIError,
     generate_daily_summary,
     explain_command,
 )
-from shellscribe.export import (
+from devscribe.export import (
     export_to_markdown,
     export_recent,
     export_project,
     export_commands_as_script,
 )
-from shellscribe.hook import (
+from devscribe.hook import (
     install_hook,
     uninstall_hook,
     check_hook_status,
@@ -47,7 +47,7 @@ from shellscribe.hook import (
 )
 
 app = typer.Typer(
-    name="shellscribe",
+    name="devscribe",
     help="AI-powered terminal session logger - git log for your whole dev life",
     add_completion=True,
 )
@@ -57,7 +57,7 @@ console = Console()
 def version_callback(value: bool):
     """Show version and exit."""
     if value:
-        console.print(f"[bold blue]ShellScribe[/bold blue] version {__version__}")
+        console.print(f"[bold blue]DevScribe[/bold blue] version {__version__}")
         raise typer.Exit()
 
 
@@ -72,7 +72,7 @@ def main(
         help="Show version and exit",
     ),
 ):
-    """ShellScribe - AI-powered terminal session logger."""
+    """DevScribe - AI-powered terminal session logger."""
     pass
 
 
@@ -89,7 +89,7 @@ def start(
         console.print(f"[yellow]Active session already exists[/yellow]")
         console.print(f"  Project: {active.project or 'Unknown'}")
         console.print(f"  Started: {active.started_at.strftime('%Y-%m-%d %H:%M')}")
-        console.print(f"\nRun [bold]shellscribe stop[/bold] to end it first.")
+        console.print(f"\nRun [bold]devscribe stop[/bold] to end it first.")
         raise typer.Exit(1)
     
     if project is None:
@@ -101,7 +101,7 @@ def start(
         f"[bold green]Session started[/bold green]\n"
         f"Project: {session.project or 'Unknown'}\n"
         f"Time: {session.started_at.strftime('%Y-%m-%d %H:%M:%S')}",
-        title="ShellScribe",
+        title="DevScribe",
         border_style="blue",
     ))
 
@@ -131,7 +131,7 @@ def stop():
         f"Project: {ended.project or 'Unknown'}\n"
         f"Duration: {duration}\n"
         f"Commands: {ended.command_count}",
-        title="ShellScribe",
+        title="DevScribe",
         border_style="blue",
     ))
 
@@ -160,7 +160,7 @@ def status():
     
     if not active:
         console.print("[yellow]No active session[/yellow]")
-        console.print("\nStart one with: [bold]shellscribe start [project][/bold]")
+        console.print("\nStart one with: [bold]devscribe start [project][/bold]")
         return
     
     duration = ""
@@ -180,7 +180,7 @@ def status():
         f"Started: {active.started_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"Duration: {duration}\n"
         f"Commands: {active.command_count}",
-        title="ShellScribe Status",
+        title="DevScribe Status",
         border_style="blue",
     ))
     
@@ -485,14 +485,14 @@ def export(
             all_commands.extend(session.get_commands())
         
         if output is None:
-            output = Path(f"shellscribe_export_{datetime.now().strftime('%Y%m%d')}.sh")
+            output = Path(f"devscribe_export_{datetime.now().strftime('%Y%m%d')}.sh")
         
         content = export_commands_as_script(all_commands, output)
         console.print(f"[green]Exported {len(all_commands)} commands to {output}[/green]")
     else:
         # Export as markdown
         if output is None:
-            output = Path(f"shellscribe_export_{datetime.now().strftime('%Y%m%d')}.md")
+            output = Path(f"devscribe_export_{datetime.now().strftime('%Y%m%d')}.md")
         
         content = export_to_markdown(sessions, output)
         console.print(f"[green]Exported {len(sessions)} sessions to {output}[/green]")
@@ -539,8 +539,8 @@ def config(
         return
     
     if key is None:
-        console.print("Use [bold]shellscribe config KEY VALUE[/bold] to set a value")
-        console.print("Use [bold]shellscribe config --list[/bold] to see all values")
+        console.print("Use [bold]devscribe config KEY VALUE[/bold] to set a value")
+        console.print("Use [bold]devscribe config --list[/bold] to see all values")
         return
     
     if value is None:

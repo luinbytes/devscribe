@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "shellscribe"
+name = "devscribe"
 version = "0.1.0"
 description = "AI-powered terminal session logger - git log for your whole dev life"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.12"
 authors = [
-    {name = "ShellScribe", email = "hello@shellscribe.dev"}
+    {name = "DevScribe", email = "hello@devscribe.dev"}
 ]
 keywords = ["cli", "logging", "terminal", "ai", "developer-tools"]
 classifiers = [
@@ -38,16 +38,16 @@ dev = [
 ]
 
 [project.scripts]
-shellscribe = "shellscribe.cli:app"
+devscribe = "devscribe.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/shellscribe/shellscribe"
-Documentation = "https://github.com/shellscribe/shellscribe#readme"
-Repository = "https://github.com/shellscribe/shellscribe"
+Homepage = "https://github.com/devscribe/devscribe"
+Documentation = "https://github.com/devscribe/devscribe#readme"
+Repository = "https://github.com/devscribe/devscribe"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["shellscribe*"]
+include = ["devscribe*"]
 
 [tool.black]
 line-length = 100

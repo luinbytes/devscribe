@@ -1,10 +1,10 @@
-"""Export functionality for ShellScribe sessions."""
+"""Export functionality for DevScribe sessions."""
 
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pathlib import Path
 
-from shellscribe.db import Session, Command, get_sessions
+from devscribe.db import Session, Command, get_sessions
 
 
 def export_to_markdown(
@@ -16,7 +16,7 @@ def export_to_markdown(
     lines = []
     
     # Header
-    lines.append("# ShellScribe Development Log")
+    lines.append("# DevScribe Development Log")
     lines.append(f"\n*Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}*\n")
     
     if not sessions:
@@ -147,7 +147,7 @@ def export_commands_as_script(commands: List[Command], output_path: Optional[Pat
     """Export successful commands as a reusable shell script."""
     lines = [
         "#!/bin/bash",
-        "# ShellScribe Export - Successful Commands",
+        "# DevScribe Export - Successful Commands",
         f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
         "",
     ]

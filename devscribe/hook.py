@@ -7,48 +7,48 @@ from pathlib import Path
 
 # Shell script that gets sourced into .bashrc/.zshrc
 HOOK_SCRIPT = '''
-# ShellScribe - AI-powered terminal session logger
-_shellscribe_log_command() {
+# DevScribe - AI-powered terminal session logger
+_devscribe_log_command() {
     local exit_code=$?
     local command="$(history 1 | sed 's/^[ ]*[0-9]*[ ]*//')"
     
-    # Skip empty commands and shellscribe's own commands
-    if [[ -n "$command" && ! "$command" =~ ^shellscribe ]]; then
-        shellscribe log "$command" "$exit_code" "$PWD" 2>/dev/null &
+    # Skip empty commands and devscribe's own commands
+    if [[ -n "$command" && ! "$command" =~ ^devscribe ]]; then
+        devscribe log "$command" "$exit_code" "$PWD" 2>/dev/null &
     fi
 }
 
 # Add to PROMPT_COMMAND (bash) or precmd (zsh)
 if [[ -n "$BASH_VERSION" ]]; then
-    export PROMPT_COMMAND="_shellscribe_log_command${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+    export PROMPT_COMMAND="_devscribe_log_command${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 elif [[ -n "$ZSH_VERSION" ]]; then
     autoload -Uz add-zsh-hook
-    _shellscribe_zsh_hook() {
-        _shellscribe_log_command
+    _devscribe_zsh_hook() {
+        _devscribe_log_command
     }
-    add-zsh-hook precmd _shellscribe_zsh_hook
+    add-zsh-hook precmd _devscribe_zsh_hook
 fi
 '''
 
 # Alternative simpler hook for bash
 BASH_HOOK = '''
-# ShellScribe hook
-if [[ -z "$SHELLSCRIBE_HOOK_INSTALLED" ]]; then
-    export PROMPT_COMMAND='shellscribe log "$(history 1 | sed "s/^[ ]*[0-9]*[ ]*//")" "$?" "$PWD" 2>/dev/null; '"$PROMPT_COMMAND"
-    export SHELLSCRIBE_HOOK_INSTALLED=1
+# DevScribe hook
+if [[ -z "$DEVSCRIBE_HOOK_INSTALLED" ]]; then
+    export PROMPT_COMMAND='devscribe log "$(history 1 | sed "s/^[ ]*[0-9]*[ ]*//")" "$?" "$PWD" 2>/dev/null; '"$PROMPT_COMMAND"
+    export DEVSCRIBE_HOOK_INSTALLED=1
 fi
 '''
 
 # ZSH hook
 ZSH_HOOK = '''
-# ShellScribe hook
-if [[ -z "$SHELLSCRIBE_HOOK_INSTALLED" ]]; then
-    _shellscribe_precmd() {
-        shellscribe log "$(history -1 | sed 's/^[ ]*[0-9]*[ ]*//')" "$?" "$PWD" 2>/dev/null
+# DevScribe hook
+if [[ -z "$DEVSCRIBE_HOOK_INSTALLED" ]]; then
+    _devscribe_precmd() {
+        devscribe log "$(history -1 | sed 's/^[ ]*[0-9]*[ ]*//')" "$?" "$PWD" 2>/dev/null
     }
     autoload -Uz add-zsh-hook
-    add-zsh-hook precmd _shellscribe_precmd
-    export SHELLSCRIBE_HOOK_INSTALLED=1
+    add-zsh-hook precmd _devscribe_precmd
+    export DEVSCRIBE_HOOK_INSTALLED=1
 fi
 '''
 
@@ -94,7 +94,7 @@ def install_hook(dry_run: bool = False) -> tuple[bool, str]:
     # Check if already installed
     try:
         content = config_file.read_text()
-        if "ShellScribe" in content or "shellscribe log" in content:
+        if "DevScribe" in content or "devscribe log" in content:
             return True, f"Hook already installed in {config_file}"
     except IOError as e:
         return False, f"Could not read {config_file}: {e}"
@@ -105,7 +105,7 @@ def install_hook(dry_run: bool = False) -> tuple[bool, str]:
     # Add the hook
     try:
         with open(config_file, "a") as f:
-            f.write("\n# ShellScribe - AI-powered terminal session logger\n")
+            f.write("\n# DevScribe - AI-powered terminal session logger\n")
             f.write(hook)
             f.write("\n")
         
@@ -147,36 +147,36 @@ def uninstall_hook() -> tuple[bool, str]:
         try:
             content = config_file.read_text()
             
-            if "ShellScribe" not in content and "shellscribe log" not in content:
+            if "DevScribe" not in content and "devscribe log" not in content:
                 continue
             
             # Remove the hook section
             lines = content.split("\n")
             new_lines = []
             skip_until_empty = False
-            in_shellscribe_block = False
+            in_devscribe_block = False
             
             for line in lines:
-                # Detect start of ShellScribe block
-                if "# ShellScribe" in line or "_shellscribe" in line:
-                    in_shellscribe_block = True
+                # Detect start of DevScribe block
+                if "# DevScribe" in line or "_devscribe" in line:
+                    in_devscribe_block = True
                     skip_until_empty = True
                     continue
                 
                 # Skip lines in the block
                 if skip_until_empty:
                     # Check if this is still part of the hook
-                    if ("SHELLSCRIBE" in line or 
-                        "_shellscribe" in line or 
-                        "PROMPT_COMMAND" in line and "shellscribe" in line or
-                        "add-zsh-hook" in line and "_shellscribe" in line or
-                        "precmd" in line and "_shellscribe" in line):
+                    if ("DEVSCRIBE" in line or 
+                        "_devscribe" in line or 
+                        "PROMPT_COMMAND" in line and "devscribe" in line or
+                        "add-zsh-hook" in line and "_devscribe" in line or
+                        "precmd" in line and "_devscribe" in line):
                         continue
                     else:
                         skip_until_empty = False
-                        in_shellscribe_block = False
+                        in_devscribe_block = False
                 
-                if not in_shellscribe_block:
+                if not in_devscribe_block:
                     new_lines.append(line)
             
             # Write back
@@ -195,7 +195,7 @@ def uninstall_hook() -> tuple[bool, str]:
     if removed:
         return True, "\n".join(messages) + "\n\nRestart your terminal or source your config to apply changes."
     else:
-        return False, "No ShellScribe hook found in any config file."
+        return False, "No DevScribe hook found in any config file."
 
 
 def check_hook_status() -> tuple[bool, str]:
@@ -222,12 +222,12 @@ def check_hook_status() -> tuple[bool, str]:
         
         try:
             content = config_file.read_text()
-            if "ShellScribe" in content or "shellscribe log" in content:
+            if "DevScribe" in content or "devscribe log" in content:
                 return True, f"Hook installed in {config_file} for {shell_name}"
         except IOError:
             pass
     
-    return False, "Hook not installed. Run 'shellscribe install' to install."
+    return False, "Hook not installed. Run 'devscribe install' to install."
 
 
 if __name__ == "__main__":
