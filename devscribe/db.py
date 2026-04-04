@@ -202,15 +202,18 @@ def log_command(
 def detect_project(working_dir: str) -> Optional[str]:
     """Detect project name from working directory (git repo name)."""
     path = Path(working_dir)
+    home = Path.home()
 
-    # Walk up the directory tree looking for .git
+    # Walk up the directory tree looking for .git, stop at home
     for parent in [path] + list(path.parents):
+        if parent == home or parent == home.parent:
+            break
         git_dir = parent / ".git"
         if git_dir.exists():
             return parent.name
 
     # Fall back to current directory name
-    if path != Path.home():
+    if path != home:
         return path.name
     return None
 

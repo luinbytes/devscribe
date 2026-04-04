@@ -52,12 +52,54 @@ if [[ -z "$DEVSCRIBE_HOOK_INSTALLED" ]]; then
 fi
 '''
 
+# PowerShell hook
+POWERSHELL_HOOK = '''
+# DevScribe hook for PowerShell
+if (-not $env:DEVSCRIBE_HOOK_INSTALLED) {
+    $DevScribeOriginalPrompt = $function:prompt
+    function prompt {
+        $lastCommand = Get-History -Count 1 -ErrorAction SilentlyContinue
+        if ($lastCommand -and $lastCommand.CommandLine -notmatch '^devscribe\\s') {
+            devscribe log $lastCommand.CommandLine $LASTEXITCODE (Get-Location).Path 2>$null
+        }
+        if ($DevScribeOriginalPrompt) { & $DevScribeOriginalPrompt } else { "PS $($executionContext.SessionState.Path.CurrentLocation)> " }
+    }
+    $env:DEVSCRIBE_HOOK_INSTALLED = "1"
+}
+'''
+
 
 def get_hook_for_shell(shell: str = "bash") -> str:
     """Get the appropriate hook script for the specified shell."""
-    if "zsh" in shell.lower():
+    shell_lower = shell.lower()
+    if "powershell" in shell_lower or "pwsh" in shell_lower:
+        return POWERSHELL_HOOK.strip()
+    if "zsh" in shell_lower:
         return ZSH_HOOK.strip()
     return BASH_HOOK.strip()
+
+
+def _is_windows() -> bool:
+    """Check if running on Windows."""
+    return sys.platform == "win32"
+
+
+def _get_powershell_profile() -> tuple:
+    """Get the PowerShell profile path and shell name.
+
+    Prefers PowerShell 7+ profile, falls back to Windows PowerShell 5.1.
+    Returns (profile_path, shell_name) tuple.
+    """
+    home = Path.home()
+    candidates = [
+        (home / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1", "PowerShell"),
+        (home / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1", "PowerShell"),
+    ]
+    for path, name in candidates:
+        if path.exists():
+            return path, name
+    # Return preferred path even if it doesn't exist yet
+    return candidates[0]
 
 
 def install_hook(dry_run: bool = False) -> tuple[bool, str]:
@@ -67,6 +109,42 @@ def install_hook(dry_run: bool = False) -> tuple[bool, str]:
     Returns:
         tuple: (success, message)
     """
+    if _is_windows():
+        config_file, shell_name = _get_powershell_profile()
+        hook = POWERSHELL_HOOK.strip()
+        
+        # Ensure parent directory exists
+        config_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Check if already installed
+        if config_file.exists():
+            try:
+                content = config_file.read_text()
+                if "DevScribe" in content or "devscribe log" in content:
+                    return True, f"Hook already installed in {config_file}"
+            except IOError as e:
+                return False, f"Could not read {config_file}: {e}"
+        
+        if dry_run:
+            return True, f"Would add hook to {config_file}\n\nHook content:\n{hook}"
+        
+        # Create or append to profile
+        try:
+            mode = "a" if config_file.exists() else "w"
+            with open(config_file, mode) as f:
+                f.write("\n# DevScribe - AI-powered terminal session logger\n")
+                f.write(hook)
+                f.write("\n")
+            
+            return True, f"""Successfully installed hook to {config_file}
+
+To activate, restart your PowerShell session.
+Or run:  . {config_file}"""
+        
+        except IOError as e:
+            return False, f"Could not write to {config_file}: {e}"
+    
+    # Unix (bash/zsh) path
     shell = os.environ.get("SHELL", "/bin/bash")
     home = Path.home()
     
@@ -127,18 +205,21 @@ def uninstall_hook() -> tuple[bool, str]:
     Returns:
         tuple: (success, message)
     """
-    shell = os.environ.get("SHELL", "/bin/bash")
-    home = Path.home()
-    
-    # Check both bash and zsh configs
-    config_files = []
-    if "zsh" in shell:
-        config_files = [home / ".zshrc", home / ".zprofile"]
-    else:
-        config_files = [home / ".bashrc", home / ".bash_profile", home / ".profile"]
-    
     removed = False
     messages = []
+    
+    if _is_windows():
+        # Check PowerShell profile paths
+        config_files = [
+            Path.home() / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1",
+            Path.home() / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1",
+        ]
+    else:
+        shell = os.environ.get("SHELL", "/bin/bash")
+        if "zsh" in shell:
+            config_files = [Path.home() / ".zshrc", Path.home() / ".zprofile"]
+        else:
+            config_files = [Path.home() / ".bashrc", Path.home() / ".bash_profile", Path.home() / ".profile"]
     
     for config_file in config_files:
         if not config_file.exists():
@@ -205,18 +286,19 @@ def check_hook_status() -> tuple[bool, str]:
     Returns:
         tuple: (installed, status_message)
     """
-    shell = os.environ.get("SHELL", "/bin/bash")
-    home = Path.home()
-    
-    config_files = []
-    if "zsh" in shell:
-        config_files = [home / ".zshrc", home / ".zprofile"]
-        shell_name = "zsh"
+    if _is_windows():
+        config_files = [
+            (Path.home() / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1", "PowerShell"),
+            (Path.home() / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1", "PowerShell"),
+        ]
     else:
-        config_files = [home / ".bashrc", home / ".bash_profile", home / ".profile"]
-        shell_name = "bash"
+        shell = os.environ.get("SHELL", "/bin/bash")
+        if "zsh" in shell:
+            config_files = [(Path.home() / ".zshrc", "zsh"), (Path.home() / ".zprofile", "zsh")]
+        else:
+            config_files = [(Path.home() / ".bashrc", "bash"), (Path.home() / ".bash_profile", "bash"), (Path.home() / ".profile", "bash")]
     
-    for config_file in config_files:
+    for config_file, shell_name in config_files:
         if not config_file.exists():
             continue
         
@@ -235,3 +317,7 @@ if __name__ == "__main__":
     print(get_hook_for_shell("bash"))
     print("---")
     print(get_hook_for_shell("zsh"))
+    print("---")
+    print(get_hook_for_shell("powershell"))
+    print("---")
+    print(get_hook_for_shell("pwsh"))

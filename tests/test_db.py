@@ -268,7 +268,10 @@ class TestDetectProject:
     def test_detect_project_falls_back_to_dirname(self, mock_home):
         """Test project detection falls back to directory name when no git."""
         regular_dir = mock_home / "regular_dir"
-        result = detect_project(str(regular_dir))
+        regular_dir.mkdir(parents=True, exist_ok=True)
+        # Mock Path.home() so the git walk stops at the mock home boundary
+        with patch("devscribe.db.Path.home", return_value=mock_home):
+            result = detect_project(str(regular_dir))
 
         assert result == "regular_dir"
 
