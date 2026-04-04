@@ -446,6 +446,38 @@
             vertical-align: text-bottom;
         }
 
+        /* Box component inside terminals */
+        .terminal-box {
+            border: 1px solid var(--text-muted);
+            border-radius: 4px;
+            margin: 4px 0;
+            overflow: hidden;
+        }
+
+        .terminal-box-header {
+            padding: 6px 12px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--text-muted);
+        }
+
+        .terminal-box-header.info {
+            color: var(--accent-cyan);
+        }
+
+        .terminal-box-body {
+            padding: 4px 12px;
+        }
+
+        .terminal-box-body .terminal-line {
+            margin-bottom: 2px;
+        }
+
+        .terminal-box-divider {
+            border: none;
+            border-top: 1px solid var(--text-muted);
+            margin: 4px 0;
+        }
+
         /* Features Section */
         .features {
             padding: 80px 0;
@@ -1164,12 +1196,25 @@
                             <span class="terminal-prompt">$</span>
                             <span class="terminal-command">devscribe recap</span>
                         </div>
-                        <pre class="terminal-box">┌─ Session Summary ─────────────────┐
-│ • Built production bundle         │
-│ • Committed new feature code      │
-│ • Fixed 3 TypeScript warnings     │
-│ • Ran test suite (47 passed)      │
-└───────────────────────────────────┘</pre>
+                        <div class="terminal-line">
+                            <div class="terminal-box">
+                                <div class="terminal-box-header">Session Summary</div>
+                                <div class="terminal-box-body">
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">• Built production bundle</span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">• Committed new feature code</span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">• Fixed 3 TypeScript warnings</span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">• Ran test suite (47 passed)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="terminal-line">
                             <span class="terminal-prompt">$</span>
                             <span class="typing-cursor"></span>
@@ -1264,20 +1309,45 @@
                         <span class="terminal-title">devscribe stats</span>
                     </div>
                     <div class="terminal-body">
-                        <pre class="terminal-box"><span class="terminal-info">┌─ Productivity Stats ──────────────┐</span>
-│ Last 7 days                       │
-├───────────────────────────────────┤
-│ Sessions: 24                      │
-│ Commands: 1,847                    │
-│ Avg/Day: 264                      │
-│ Success Rate: 94.2%               │
-│ Total Time: 32h 15m               │
-├───────────────────────────────────┤
-│ Top Commands:                     │
-│  git commit     312  (16.9%)      │
-│  npm run        248  (13.4%)      │
-│  pytest         187  (10.1%)      │
-└───────────────────────────────────┘</pre>
+                        <div class="terminal-line">
+                            <div class="terminal-box">
+                                <div class="terminal-box-header info">Productivity Stats</div>
+                                <div class="terminal-box-body">
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">Last 7 days</span>
+                                    </div>
+                                    <hr class="terminal-box-divider">
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">Sessions: <span class="terminal-success">24</span></span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">Total Commands: <span class="terminal-success">1,847</span></span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">Avg Commands/Day: <span class="terminal-success">264</span></span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">Success Rate: <span class="terminal-success">94.2%</span></span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">Total Time: <span class="terminal-success">32h 15m</span></span>
+                                    </div>
+                                    <hr class="terminal-box-divider">
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">Top Commands:</span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">  git commit     <span class="terminal-cyan">312</span>  (16.9%)</span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">  npm run        <span class="terminal-cyan">248</span>  (13.4%)</span>
+                                    </div>
+                                    <div class="terminal-line">
+                                        <span class="terminal-output">  pytest         <span class="terminal-cyan">187</span>  (10.1%)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
