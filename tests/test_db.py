@@ -15,6 +15,8 @@ from devscribe.db import (
     detect_project,
     get_sessions,
     search_commands,
+    search_commands_regex,
+    search_commands_fuzzy,
 )
 
 
@@ -268,7 +270,9 @@ class TestDetectProject:
     def test_detect_project_falls_back_to_dirname(self, mock_home):
         """Test project detection falls back to directory name when no git."""
         regular_dir = mock_home / "regular_dir"
-        result = detect_project(str(regular_dir))
+        # Mock Path.home() so the git walk stops at the mock home boundary
+        with patch("devscribe.db.Path.home", return_value=mock_home):
+            result = detect_project(str(regular_dir))
 
         assert result == "regular_dir"
 
@@ -370,3 +374,79 @@ class TestSearchCommands:
 
         results = search_commands("echo", limit=5)
         assert len(results) == 5
+
+
+class TestSearchCommandsRegex:
+    """Tests for search_commands_regex function."""
+
+    def test_regex_finds_matches(self, temp_db, sample_session):
+        """Test regex search finds commands matching the pattern."""
+        Command.create(session=sample_session, command="git push origin main", exit_code=0, working_dir="/home")
+        Command.create(session=sample_session, command="git pull origin main", exit_code=0, working_dir="/home")
+        Command.create(session=sample_session, command="git status", exit_code=0, working_dir="/home")
+        results = search_commands_regex(r"git\s+(push|pull)")
+        assert len(results) == 2
+
+    def test_regex_no_matches(self, temp_db, sample_session):
+        """Test regex search returns empty list when no matches."""
+        Command.create(session=sample_session, command="echo hello", exit_code=0, working_dir="/home")
+        results = search_commands_regex(r"nonexistent_pattern_xyz")
+        assert len(results) == 0
+
+    def test_regex_case_insensitive(self, temp_db, sample_session):
+        """Test regex search is case-insensitive."""
+        Command.create(session=sample_session, command="GIT STATUS", exit_code=0, working_dir="/home")
+        results = search_commands_regex(r"git status")
+        assert len(results) == 1
+
+    def test_regex_invalid_pattern_raises(self, temp_db, sample_session):
+        """Test regex search raises ValueError for invalid patterns."""
+        import pytest
+        with pytest.raises(ValueError):
+            search_commands_regex(r"[invalid(")
+
+
+class TestSearchCommandsFuzzy:
+    """Tests for search_commands_fuzzy function."""
+
+    def test_fuzzy_finds_similar(self, temp_db, sample_session):
+        """Test fuzzy search finds commands similar to query."""
+        Command.create(session=sample_session, command="git push origin main", exit_code=0, working_dir="/home")
+        Command.create(session=sample_session, command="echo hello", exit_code=0, working_dir="/home")
+        results = search_commands_fuzzy("git push")
+        assert len(results) >= 1
+        assert "git push" in results[0].command.lower()
+
+    def test_fuzzy_no_matches(self, temp_db, sample_session):
+        """Test fuzzy search returns empty for very different queries."""
+        Command.create(session=sample_session, command="echo hello", exit_code=0, working_dir="/home")
+        results = search_commands_fuzzy("zzz_zzz_zzz_totally_different", threshold=0.6)
+        assert len(results) == 0
+
+    def test_fuzzy_sorts_by_relevance(self, temp_db, sample_session):
+        """Test fuzzy search sorts results by best match first."""
+        Command.create(session=sample_session, command="git push origin main", exit_code=0, working_dir="/home")
+        Command.create(session=sample_session, command="git pull origin main", exit_code=0, working_dir="/home")
+        Command.create(session=sample_session, command="npm test", exit_code=0, working_dir="/home")
+
+        results = search_commands_fuzzy("git push")
+        assert len(results) >= 1
+        # Best match should be "git push origin main"
+        assert "git push" in results[0].command
+
+    def test_fuzzy_substring_boost(self, temp_db, sample_session):
+        """Test fuzzy search boosts substring matches."""
+        Command.create(session=sample_session, command="npm run build --prod", exit_code=0, working_dir="/home")
+        Command.create(session=sample_session, command="npm install", exit_code=0, working_dir="/home")
+        results = search_commands_fuzzy("build")
+        assert len(results) >= 1
+        assert "build" in results[0].command
+
+    def test_fuzzy_threshold(self, temp_db, sample_session):
+        """Test fuzzy search respects threshold."""
+        Command.create(session=sample_session, command="git status", exit_code=0, working_dir="/home")
+        # Lower threshold should match more
+        results_low = search_commands_fuzzy("git stat", threshold=0.3)
+        # Higher threshold should match fewer
+        results_high = search_commands_fuzzy("git stat", threshold=0.9)
+        assert len(results_low) >= len(results_high)

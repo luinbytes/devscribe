@@ -24,6 +24,8 @@ from devscribe.db import (
     log_command,
     get_sessions,
     search_commands,
+    search_commands_regex,
+    search_commands_fuzzy,
     detect_project,
 )
 from devscribe.ai import (
@@ -395,13 +397,25 @@ def list_commands(
 def search(
     query: str = typer.Argument(..., help="Search query"),
     interactive: bool = typer.Option(False, "--interactive", "-i", help="Use fzf for interactive search"),
+    regex: bool = typer.Option(False, "--regex", "-r", help="Use regex matching"),
+    fuzzy: bool = typer.Option(False, "--fuzzy", "-f", help="Use fuzzy matching (difflib)"),
     limit: int = typer.Option(50, "--limit", "-n", help="Maximum results"),
 ):
     """Search through command history."""
-    commands = search_commands(query, limit)
+    try:
+        if regex:
+            commands = search_commands_regex(query, limit)
+        elif fuzzy:
+            commands = search_commands_fuzzy(query, limit)
+        else:
+            commands = search_commands(query, limit)
+    except ValueError as e:
+        console.print(f"[red]Invalid regex: {e}[/red]")
+        raise typer.Exit(1)
     
     if not commands:
-        console.print(f"[yellow]No commands matching '{query}'[/yellow]")
+        search_type = "regex" if regex else "fuzzy" if fuzzy else "substring"
+        console.print(f"[yellow]No commands matching '{query}' ({search_type})[/yellow]")
         return
     
     if interactive:
@@ -435,7 +449,11 @@ def search(
             interactive = False
     
     if not interactive:
-        table = Table(title=f"Search Results for '{query}'")
+        search_type = "regex" if regex else "fuzzy" if fuzzy else ""
+        title = f"Search Results for '{query}'"
+        if search_type:
+            title += f" ({search_type})"
+        table = Table(title=title)
         table.add_column("Time", style="cyan")
         table.add_column("Status", width=8)
         table.add_column("Command")

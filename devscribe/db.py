@@ -202,15 +202,18 @@ def log_command(
 def detect_project(working_dir: str) -> Optional[str]:
     """Detect project name from working directory (git repo name)."""
     path = Path(working_dir)
+    home = Path.home()
 
-    # Walk up the directory tree looking for .git
+    # Walk up the directory tree looking for .git, stop at home
     for parent in [path] + list(path.parents):
+        if parent == home or parent == home.parent:
+            break
         git_dir = parent / ".git"
         if git_dir.exists():
             return parent.name
 
     # Fall back to current directory name
-    if path != Path.home():
+    if path != home:
         return path.name
     return None
 
@@ -248,13 +251,69 @@ def get_sessions(
 
 
 def search_commands(query: str, limit: int = 50) -> List[Command]:
-    """Search for commands matching a query."""
+    """Search for commands matching a query (substring match)."""
     return list(
         Command.select()
         .where(Command.command.contains(query))
         .order_by(Command.timestamp.desc())
         .limit(limit)
     )
+
+
+def search_commands_regex(pattern: str, limit: int = 50) -> List[Command]:
+    """Search for commands matching a regex pattern.
+
+    Raises ValueError if the pattern is not a valid regex.
+    """
+    import re
+
+    try:
+        re.compile(pattern)  # Validate regex
+    except re.error as e:
+        raise ValueError(f"Invalid regex: {e}") from e
+
+    # SQLite doesn't have native regex, so we filter in Python
+    all_commands = (
+        Command.select()
+        .order_by(Command.timestamp.desc())
+        .limit(limit * 5)  # Fetch more to account for post-filtering
+    )
+
+    regex = re.compile(pattern, re.IGNORECASE)
+    results = [c for c in all_commands if regex.search(c.command)]
+    return results[:limit]
+
+
+def search_commands_fuzzy(query: str, limit: int = 50, threshold: float = 0.4) -> List[Command]:
+    """Search for commands using fuzzy matching (difflib, no external deps).
+
+    Returns commands with a fuzzy match ratio >= threshold, sorted by best match.
+    Uses a combined approach: substring match gets a boost, otherwise uses
+    SequenceMatcher ratio. Default threshold of 0.4 catches reasonable matches.
+    """
+    from difflib import SequenceMatcher
+
+    all_commands = (
+        Command.select()
+        .order_by(Command.timestamp.desc())
+        .limit(limit * 5)  # Fetch more to account for post-filtering
+    )
+
+    scored = []
+    query_lower = query.lower()
+    for cmd in all_commands:
+        cmd_lower = cmd.command.lower()
+        # Substring match gets maximum score
+        if query_lower in cmd_lower:
+            scored.append((1.0, cmd))
+        else:
+            ratio = SequenceMatcher(None, query_lower, cmd_lower).ratio()
+            if ratio >= threshold:
+                scored.append((ratio, cmd))
+
+    # Sort by best match first
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [cmd for _, cmd in scored[:limit]]
 
 
 # Initialize database on module load
