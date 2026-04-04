@@ -68,6 +68,7 @@ class Command(BaseModel):
     exit_code = IntegerField()
     timestamp = DateTimeField(default=datetime.now)
     working_dir = TextField()
+    duration_ms = IntegerField(null=True)
 
     class Meta:
         table_name = "commands"
@@ -81,6 +82,21 @@ class Command(BaseModel):
     def is_error(self) -> bool:
         """Check if command failed."""
         return self.exit_code != 0
+
+    @property
+    def formatted_duration(self) -> str:
+        """Return a human-readable duration string."""
+        if self.duration_ms is None:
+            return "-"
+        ms = self.duration_ms
+        if ms < 1000:
+            return f"{ms}ms"
+        elif ms < 60000:
+            return f"{ms / 1000:.1f}s"
+        else:
+            mins = int(ms / 60000)
+            secs = int((ms % 60000) / 1000)
+            return f"{mins}m{secs}s"
 
 
 class Config:
@@ -149,6 +165,19 @@ def create_tables() -> None:
     """Create database tables if they don't exist."""
     with db:
         db.create_tables([Session, Command])
+    # Add duration_ms column if it doesn't exist (migration for existing DBs)
+    _migrate_add_duration_ms()
+
+
+def _migrate_add_duration_ms() -> None:
+    """Add duration_ms column to commands table if missing (backwards compat)."""
+    try:
+        columns = db.execute_sql("PRAGMA table_info(commands)").fetchall()
+        column_names = [col[1] for col in columns]
+        if "duration_ms" not in column_names:
+            db.execute_sql("ALTER TABLE commands ADD COLUMN duration_ms INTEGER")
+    except Exception:
+        pass  # New install or non-SQLite, will be created correctly
 
 
 def get_active_session() -> Optional[Session]:
@@ -182,7 +211,8 @@ def end_session(session: Optional[Session] = None) -> Optional[Session]:
 
 
 def log_command(
-    command: str, exit_code: int, working_dir: str, session: Optional[Session] = None
+    command: str, exit_code: int, working_dir: str, session: Optional[Session] = None,
+    duration_ms: Optional[int] = None,
 ) -> Command:
     """Log a command to the database."""
     if session is None:
@@ -196,21 +226,41 @@ def log_command(
         command=command,
         exit_code=exit_code,
         working_dir=working_dir,
+        duration_ms=duration_ms,
     )
+
+
+def calculate_command_durations(session: Session) -> None:
+    """Calculate and backfill duration_ms from consecutive command timestamps.
+
+    Sets duration_ms for each command based on the time gap to the next command.
+    The last command in a session gets None (unknown duration).
+    """
+    commands = list(session.commands.order_by(Command.timestamp))
+    for i, cmd in enumerate(commands):
+        if i + 1 < len(commands):
+            next_cmd = commands[i + 1]
+            delta_ms = int((next_cmd.timestamp - cmd.timestamp).total_seconds() * 1000)
+            if cmd.duration_ms is None:
+                cmd.duration_ms = max(0, delta_ms)
+                cmd.save()
 
 
 def detect_project(working_dir: str) -> Optional[str]:
     """Detect project name from working directory (git repo name)."""
     path = Path(working_dir)
+    home = Path.home()
 
-    # Walk up the directory tree looking for .git
+    # Walk up the directory tree looking for .git, stop at home
     for parent in [path] + list(path.parents):
+        if parent == home or parent == home.parent:
+            break
         git_dir = parent / ".git"
         if git_dir.exists():
             return parent.name
 
     # Fall back to current directory name
-    if path != Path.home():
+    if path != home:
         return path.name
     return None
 

@@ -60,6 +60,17 @@ def generate_summary(session: Session) -> str:
     # Format commands for the prompt
     cmd_text = format_commands_for_summary(commands)
     
+    # Identify slow commands (>10s) as a signal
+    slow_commands = [c for c in commands if c.duration_ms and c.duration_ms > 10000]
+    slow_note = ""
+    if slow_commands:
+        slow_lines = []
+        for c in slow_commands[:10]:
+            dur = c.formatted_duration
+            cmd_text_short = c.command[:80]
+            slow_lines.append(f"  - [{dur}] {cmd_text_short}")
+        slow_note = f"\nNotably slow commands (>10s):\n" + "\n".join(slow_lines)
+    
     # Build the prompt
     prompt = f"""You are a helpful assistant that summarizes development sessions. 
 Analyze the following shell commands from a coding session and provide a concise 5-bullet summary.
@@ -74,7 +85,7 @@ Focus on:
 Session Project: {session.project or 'Unknown'}
 Session Started: {session.started_at.strftime('%Y-%m-%d %H:%M')}
 Total Commands: {len(commands)}
-
+{slow_note}
 Commands:
 {cmd_text}
 

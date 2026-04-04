@@ -184,15 +184,16 @@ def status():
         border_style="blue",
     ))
     
-    # Show recent commands
+    # Show recent commands with duration
     commands = active.get_commands()[-10:]  # Last 10
     if commands:
         console.print("\n[dim]Recent commands:[/dim]")
         for cmd in commands:
             status_icon = "✓" if cmd.is_success else f"✗({cmd.exit_code})"
             time_str = cmd.timestamp.strftime("%H:%M:%S")
-            cmd_text = cmd.command[:60] + "..." if len(cmd.command) > 60 else cmd.command
-            console.print(f"  [{time_str}] {status_icon} {cmd_text}")
+            dur = cmd.formatted_duration
+            cmd_text = cmd.command[:50] + "..." if len(cmd.command) > 50 else cmd.command
+            console.print(f"  [{time_str}] {status_icon} [dim]{dur:>8}[/dim] {cmd_text}")
 
 
 @app.command()
@@ -350,6 +351,7 @@ def list_commands(
     limit: int = typer.Option(50, "--limit", "-n", help="Maximum commands to show"),
     failed: bool = typer.Option(False, "--failed", "-f", help="Show only failed commands"),
     project: Optional[str] = typer.Option(None, "--project", "-p", help="Filter by project"),
+    sort: Optional[str] = typer.Option(None, "--sort", "-s", help="Sort by: time (default), duration"),
 ):
     """List recent commands."""
     query = Command.select().join(Session)
@@ -360,7 +362,12 @@ def list_commands(
     if project:
         query = query.where(Session.project == project)
     
-    query = query.order_by(Command.timestamp.desc()).limit(limit)
+    if sort == "duration":
+        query = query.order_by(Command.duration_ms.desc(nulls='LAST'))
+    else:
+        query = query.order_by(Command.timestamp.desc())
+    
+    query = query.limit(limit)
     
     commands = list(query)
     
@@ -368,22 +375,31 @@ def list_commands(
         console.print("[yellow]No commands found.[/yellow]")
         return
     
-    table = Table(title="Recent Commands" if not failed else "Failed Commands")
+    title = "Recent Commands"
+    if failed:
+        title = "Failed Commands"
+    if sort == "duration":
+        title += " (sorted by duration)"
+    
+    table = Table(title=title)
     table.add_column("ID", style="dim", width=6)
     table.add_column("Time", style="cyan")
     table.add_column("Status", width=8)
+    table.add_column("Duration", style="magenta", width=8)
     table.add_column("Project", style="green")
     table.add_column("Command")
     
     for cmd in commands:
         status = "[green]✓[/green]" if cmd.is_success else f"[red]✗({cmd.exit_code})[/red]"
         time_str = cmd.timestamp.strftime("%m/%d %H:%M")
-        cmd_text = cmd.command[:60] + "..." if len(cmd.command) > 60 else cmd.command
+        dur = cmd.formatted_duration
+        cmd_text = cmd.command[:50] + "..." if len(cmd.command) > 50 else cmd.command
         
         table.add_row(
             str(cmd.id),
             time_str,
             status,
+            dur,
             cmd.session.project or "-",
             cmd_text,
         )
